@@ -1,0 +1,7 @@
+{
+    "editor.formatOnSave": true,
+    "javascript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": true,
+    "javascript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyParenthesis": true,
+    "terminal.integrated.defaultLocation": "view",
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+}

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AOC2022</title>
+    <script src="./data.js"></script>
+</head>
+<style>
+    .row {
+        display: flex;
+        justify-content: left;
+    }
+
+    .point {
+        display: block;
+        width: 6px;
+        height: 6px;
+        background-color: aliceblue;
+    }
+
+    .sand {
+        background-color: sandybrown;
+    }
+
+    .track {
+        background-color: blueviolet;
+    }
+
+    .border {
+        background-color: gray;
+    }
+</style>
+
+<body>
+    <h1>Advent of Code 2022</h1>
+    <h2>Day 14, Part 1:</h2>
+    <div id="container">
+    </div>
+    <script>
+        const commandLines = data.split( '\n' )
+            .map( e => e.split( ' -> ' )
+                .map( e => e.split( ',' )
+                    .map( e => Number( e ) ) ) )
+
+        let [ minX, maxX, maxY ] = [ Infinity, 0, 0 ]
+
+        for ( const line of commandLines ) {
+            for ( const xy of line ) {
+                if ( xy[ 0 ] < minX ) minX = xy[ 0 ]
+                if ( xy[ 0 ] > maxX ) maxX = xy[ 0 ]
+                if ( xy[ 1 ] > maxY ) maxY = xy[ 1 ]
+            }
+        }
+
+        let length = maxX - minX + 1
+        let height = maxY + 1
+
+        const grid = []
+        const allPoints = new Set()
+
+        for ( const commandLine of commandLines ) {
+            linkPoints( commandLine )
+        }
+
+        for ( let y = 0; y < height; y++ ) {
+            let row = []
+            for ( let x = 0; x < length; x++ ) {
+                let absX = x + minX
+                let absY = y
+                if ( allPoints.has( absX + ',' + absY ) ) {
+                    row.push( '#' )
+                } else {
+                    row.push( '.' )
+                }
+            }
+            grid.push( row )
+        }
+
+        function linkPoints( coordinates ) {
+            for ( let i = 0; i < coordinates.length - 1; i++ ) {
+                let coords = [ coordinates[ i ], coordinates[ i + 1 ] ]
+                let diffCoords = [
+                    coords[ 0 ][ 0 ] - coords[ 1 ][ 0 ],
+                    coords[ 0 ][ 1 ] - coords[ 1 ][ 1 ]
+                ]
+                let xy = diffCoords[ 0 ] === 0 ? 1 : 0
+                if ( diffCoords[ xy ] > 0 ) {
+                    coords.reverse()
+                }
+                for ( let i = 0; i <= Math.abs( diffCoords[ xy ] ); i++ ) {
+                    if ( xy === 0 ) {
+                        allPoints.add( [ coords[ 0 ][ xy ] + i, coords[ 0 ][ 1 ] ].join( ',' ) )
+                    } else {
+                        allPoints.add( [ coords[ 0 ][ 0 ], coords[ 0 ][ xy ] + i ].join( ',' ) )
+                    }
+                }
+            }
+        }
+
+        createHTML()
+        let count = 0
+        let startSand = true
+
+        // for Puzzle Solution
+        // while ( startSand ) {
+        //     dropSand( [ 500 - minX, 0 ] )
+        // }
+
+        let timer = setInterval( dropSandInterval, 50 );
+        function dropSandInterval() {
+            if ( startSand === false ) {
+                clearInterval( timer )
+            }
+            dropSand( [ 500 - minX, 0 ] )
+        }
+
+        function dropSand( coordinates ) {
+            let [ x, y ] = [ coordinates[ 0 ], coordinates[ 1 ] ]
+            traceSand( y + 1, x + 1 )
+
+            if ( y === height - 1 ) {
+                b = [ x, y ]
+                return startSand = false
+            }
+            if ( x === 0 || x === length - 1 ) {
+                a = [ x, y ]
+                return startSand = false
+            }
+            if ( grid[ y + 1 ][ x ] === '.' ) return dropSand( [ x, y + 1 ] )
+
+            if ( grid[ y + 1 ][ x ] !== '.' ) {
+                if ( grid[ y + 1 ][ x - 1 ] === '.' ) return dropSand( [ x - 1, y + 1 ] )
+                if ( grid[ y + 1 ][ x + 1 ] === '.' ) return dropSand( [ x + 1, y + 1 ] )
+            }
+
+            let row = [ ...grid[ y ] ]
+            row.splice( x, 1, 'o' )
+            grid.splice( y, 1, row )
+            settleSand( y + 1, x + 1 )
+            count++
+        }
+
+        console.log( 'count :>> ', count );
+
+        let result = grid.map( e => e.join( '' ) ).join( '\n' )
+        console.log( 'result :>> ', result );
+
+
+        /*
+           for HTML
+        */
+        function createHTML() {
+            let divContainer = document.getElementById( 'container' )
+
+            grid.forEach( ( row, i, a ) => {
+                let rowNr = i + 1
+                let divRow = document.createElement( 'div' )
+                divRow.classList.add( 'row' )
+                divRow.setAttribute( 'id', 'row-' + rowNr )
+
+                row.forEach( ( e, i, a ) => {
+                    let span = document.createElement( 'span' )
+                    span.classList.add( 'point' )
+                    if ( e === '.' ) span.classList.add( 'empty' )
+                    if ( e === '#' ) span.classList.add( 'border' )
+                    let x = i + 1
+                    span.setAttribute( 'id', 'p-' + rowNr + ',' + x )
+                    divRow.append( span )
+                } )
+                divContainer.append( divRow )
+            } )
+        }
+        function traceSand( y, x ) {
+            let point = document.getElementById( 'p-' + y + ',' + x )
+            point.classList.add( 'track' )
+        }
+        function settleSand( y, x ) {
+            let point = document.getElementById( 'p-' + y + ',' + x )
+            point.classList.remove( 'track' )
+            point.classList.add( 'sand' )
+        }
+    </script>
+</body>
+
+</html>
